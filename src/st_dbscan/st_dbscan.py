@@ -87,9 +87,8 @@ class ST_DBSCAN():
         n, m = X.shape
 
         # Compute sqaured form Euclidean Distance Matrix for 'time' attribute and the spatial attributes
-        time_dist = squareform(pdist(X[:, 0].reshape(n, 1),
-                                     metric=self.metric))
-        euc_dist = squareform(pdist(X[:, 1:], metric=self.metric))
+        time_dist = pdist(X[:, 0].reshape(n, 1), metric=self.metric)
+        euc_dist = pdist(X[:, 1:], metric=self.metric)
 
         # filter the euc_dist matrix using the time_dist
         dist = np.where(time_dist <= self.eps2, euc_dist, 2 * self.eps1)
@@ -97,7 +96,7 @@ class ST_DBSCAN():
         db = DBSCAN(eps=self.eps1,
                     min_samples=self.min_samples,
                     metric='precomputed')
-        db.fit(dist)
+        db.fit(squareform(dist))
 
         self.labels = db.labels_
 
@@ -153,9 +152,9 @@ class ST_DBSCAN():
                 n, m = frame.shape
 
                 # Compute sqaured form Euclidean Distance Matrix for 'time' attribute and the spatial attributes
-                time_dist = squareform(
-                    pdist(frame[:, 0].reshape(n, 1), metric=self.metric))
-                euc_dist = squareform(pdist(frame[:, 1:], metric=self.metric))
+                time_dist = pdist(frame[:, 0].reshape(n, 1),
+                                  metric=self.metric)
+                euc_dist = pdist(frame[:, 1:], metric=self.metric)
 
                 # filter the euc_dist matrix using the time_dist
                 dist = np.where(time_dist <= self.eps2, euc_dist,
@@ -164,7 +163,7 @@ class ST_DBSCAN():
                 db = DBSCAN(eps=self.eps1,
                             min_samples=self.min_samples,
                             metric='precomputed')
-                db.fit(dist)
+                db.fit(squareform(dist))
 
                 # very simple merging - take just right clusters of the right frame
                 # Change in future version to a better merging process
