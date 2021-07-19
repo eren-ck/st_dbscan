@@ -6,6 +6,7 @@ ST-DBSCAN - fast scalable implementation of ST DBSCAN
 """
 
 # Author: Eren Cakmak <eren.cakmak@uni-konstanz.de>
+#         Manuel Plank <manuel.plank@uni-konstanz.de>
 #
 # License: MIT
 
@@ -104,10 +105,7 @@ class ST_DBSCAN():
 
     def fit_frame_split(self, X, frame_size, frame_overlap=None):
         """
-        Apply the ST DBSCAN algorithm with splitting it into frames 
-        Merging is still not optimal resulting in minor errors in 
-        the overlapping area. In this case the input data has to be 
-        sorted for by time. 
+        Apply the ST DBSCAN algorithm with splitting it into frames.
         ----------
         X : 2D numpy array with
             The first element of the array should be the time (sorted by time)
@@ -149,35 +147,50 @@ class ST_DBSCAN():
         for i in range(0, len(time), (frame_size - frame_overlap + 1)):
             for period in [time[i:i + frame_size]]:
                 frame = X[np.isin(X[:, 0], period)]
-                n, m = frame.shape
 
-                # Compute sqaured form Euclidean Distance Matrix for 'time' attribute and the spatial attributes
-                time_dist = pdist(frame[:, 0].reshape(n, 1),
-                                  metric=self.metric)
-                euc_dist = pdist(frame[:, 1:], metric=self.metric)
+                self.fit(frame)
 
-                # filter the euc_dist matrix using the time_dist
-                dist = np.where(time_dist <= self.eps2, euc_dist,
-                                2 * self.eps1)
-
-                db = DBSCAN(eps=self.eps1,
-                            min_samples=self.min_samples,
-                            metric='precomputed')
-                db.fit(squareform(dist))
-
-                # very simple merging - take just right clusters of the right frame
-                # Change in future version to a better merging process
+                # match the labels in the overlaped zone
+                # objects in the second frame are relabeled
+                # to match the cluster id from the first frame
                 if not type(labels) is np.ndarray:
-                    labels = db.labels_
+                    labels = self.labels
                 else:
+                    frame_one_overlap_labels = labels[len(labels) -
+                                                      right_overlap:]
+                    frame_two_overlap_labels = self.labels[0:right_overlap]
+
+                    mapper = {}
+                    for i in list(
+                            zip(frame_one_overlap_labels,
+                                frame_two_overlap_labels)):
+                        mapper[i[1]] = i[0]
+
+                    # clusters without overlapping points are ignored
+                    ignore_clusters = set(self.labels) - set(
+                        frame_two_overlap_labels)
+                    # recode them to the value -99
+                    new_labels_unmatched = [
+                        i if i not in ignore_clusters else -99
+                        for i in self.labels
+                    ]
+
+                    # objects in the second frame are relabeled to match the cluster id from the first frame
+                    new_labels = np.array([
+                        mapper[i] if i != -99 else i
+                        for i in new_labels_unmatched
+                    ])
+
                     # delete the right overlap
                     labels = labels[0:len(labels) - right_overlap]
                     # change the labels of the new clustering and concat
-                    labels = np.concatenate((labels, (db.labels_ + max_label)))
+                    labels = np.concatenate((labels, new_labels))
 
                 right_overlap = len(X[np.isin(X[:, 0],
                                               period[-frame_overlap + 1:])])
-                max_label = np.max(labels)
+
+        # rename labels with -99
+        labels[labels == -99] = -1
 
         self.labels = labels
         return self
