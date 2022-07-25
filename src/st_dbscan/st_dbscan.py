@@ -14,6 +14,8 @@ import numpy as np
 from scipy.spatial.distance import pdist, squareform
 from sklearn.cluster import DBSCAN
 from sklearn.utils import check_array
+from scipy.sparse import coo_matrix
+from sklearn.neighbors import NearestNeighbors
 
 
 class ST_DBSCAN():
@@ -52,6 +54,7 @@ class ST_DBSCAN():
     
     Peca, I., Fuchs, G., Vrotsou, K., Andrienko, N. V., & Andrienko, G. L. (2012). Scalable Cluster Analysis of Spatial Events. In EuroVA@ EuroVis.
     """
+
     def __init__(self,
                  eps1=0.5,
                  eps2=10,
@@ -87,19 +90,53 @@ class ST_DBSCAN():
 
         n, m = X.shape
 
-        # Compute sqaured form Euclidean Distance Matrix for 'time' attribute and the spatial attributes
-        time_dist = pdist(X[:, 0].reshape(n, 1), metric=self.metric)
-        euc_dist = pdist(X[:, 1:], metric=self.metric)
+        if len(X) < 20000:
+            # compute with quadratic memory consumption
 
-        # filter the euc_dist matrix using the time_dist
-        dist = np.where(time_dist <= self.eps2, euc_dist, 2 * self.eps1)
+            # Compute sqaured form Euclidean Distance Matrix for 'time' attribute and the spatial attributes
+            time_dist = pdist(X[:, 0].reshape(n, 1), metric=self.metric)
+            euc_dist = pdist(X[:, 1:], metric=self.metric)
 
-        db = DBSCAN(eps=self.eps1,
-                    min_samples=self.min_samples,
-                    metric='precomputed')
-        db.fit(squareform(dist))
+            # filter the euc_dist matrix using the time_dist
+            dist = np.where(time_dist <= self.eps2, euc_dist, 2 * self.eps1)
 
-        self.labels = db.labels_
+            db = DBSCAN(eps=self.eps1,
+                        min_samples=self.min_samples,
+                        metric='precomputed')
+            db.fit(squareform(dist))
+
+            self.labels = db.labels_
+
+        else:
+            # compute with sparse matrices
+            # Compute sparse matrix für Euclidean distance
+            nn_spatial = NearestNeighbors(metric=self.metric, radius=self.eps1)
+            nn_spatial.fit(X[:, 1:])
+            euc_sp = nn_spatial.radius_neighbors_graph(X[:, 1:],
+                                                       mode='distance')
+
+            # Compute sparse matrix für temporal distance
+            nn_time = NearestNeighbors(metric=self.metric, radius=self.eps2)
+            nn_time.fit(X[:, 0].reshape(n, 1))
+            time_sp = nn_time.radius_neighbors_graph(X[:, 0].reshape(n, 1),
+                                                     mode='distance')
+
+            # combine both sparse matrixes and filter by time distance matrix
+            row = time_sp.nonzero()[0]
+            column = time_sp.nonzero()[1]
+            v = np.array(euc_sp[row, column])[0]
+
+            # create sparse distance matrix
+            dist_sp = coo_matrix((v, (row, column)), shape=(n, n))
+            dist_sp = dist_sp.tocsc()
+            dist_sp.eliminate_zeros()
+
+            db = DBSCAN(eps=self.eps1,
+                        min_samples=self.min_samples,
+                        metric='precomputed')
+            db.fit(dist_sp)
+
+            self.labels = db.labels_
 
         return self
 
@@ -167,8 +204,8 @@ class ST_DBSCAN():
                         mapper[i[1]] = i[0]
 
                     # clusters without overlapping points are ignored
-                    ignore_clusters = set(self.labels) - set(
-                        frame_two_overlap_labels)
+                    ignore_clusters = set(
+                        self.labels) - set(frame_two_overlap_labels)
                     # recode them to the value -99
                     new_labels_unmatched = [
                         i if i not in ignore_clusters else -99

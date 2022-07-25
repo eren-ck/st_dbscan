@@ -5,7 +5,7 @@
 *st_dbscan* is an open-source software package for the spatial-temporal clustering of movement data:
 
 - Implemnted using `numpy` and `sklearn`
-- Scales to memory - using chuncking see `st_dbscan.fit_frame_split`
+- Scales to memory - using chuncking sparse matrices and the `st_dbscan.fit_frame_split`
 
 ## Installation
 The easiest way to install *st_dbscan* is by using `pip` :
@@ -27,12 +27,24 @@ st_dbscan.fit(data)
 
 ## Description
 
-A package to perform the ST_DBSCAN clustering. For more details please see the following papers:
+A package to perform the ST_DBSCAN clustering. If you use the package, please consider citing the following benchmark paper:
 
-```
-* Ester, M., H. P. Kriegel, J. Sander, and X. Xu, "A Density-Based Algorithm for Discovering Clusters in Large Spatial Databases with Noise". In: Proceedings of the 2nd International Conference on Knowledge Discovery and Data Mining, Portland, OR, AAAI Press, pp. 226-231. 1996
-* Birant, Derya, and Alp Kut. "ST-DBSCAN: An algorithm for clustering spatial–temporal data." Data & Knowledge Engineering 60.1 (2007): 208-221.
-* Peca, I., Fuchs, G., Vrotsou, K., Andrienko, N. V., & Andrienko, G. L. (2012). Scalable Cluster Analysis of Spatial Events. In EuroVA@ EuroVis.
+```bibtex
+@inproceedings{cakmak2021spatio,
+        author = {Cakmak, Eren and Plank, Manuel and Calovi, Daniel S. and Jordan, Alex and Keim, Daniel},
+        title = {Spatio-Temporal Clustering Benchmark for Collective Animal Behavior},
+        year = {2021},
+        isbn = {9781450391221},
+        publisher = {Association for Computing Machinery},
+        address = {New York, NY, USA},
+        url = {https://doi.org/10.1145/3486637.3489487},
+        doi = {10.1145/3486637.3489487},
+        booktitle = {Proceedings of the 1st ACM SIGSPATIAL International Workshop on Animal Movement Ecology and Human Mobility},
+        pages = {5–8},
+        numpages = {4},
+        location = {Beijing, China},
+        series = {HANIMOB '21}
+}
 ```
 
 ## License
