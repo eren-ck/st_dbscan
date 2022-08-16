@@ -202,21 +202,24 @@ class ST_DBSCAN():
                             zip(frame_one_overlap_labels,
                                 frame_two_overlap_labels)):
                         mapper[i[1]] = i[0]
+                    mapper[
+                        -1] = -1  # avoiding outliers being mapped to cluster
 
-                    # clusters without overlapping points are ignored
+                    # clusters without overlapping points are given new cluster
                     ignore_clusters = set(
                         self.labels) - set(frame_two_overlap_labels)
-                    # recode them to the value -99
-                    new_labels_unmatched = [
-                        i if i not in ignore_clusters else -99
-                        for i in self.labels
-                    ]
+                    # recode them to new cluster value
+                    if -1 in labels:
+                        labels_counter = len(set(labels)) - 1
+                    else:
+                        labels_counter = len(set(labels))
+                    for j in ignore_clusters:
+                        mapper[j] = labels_counter
+                        labels_counter += 1
 
                     # objects in the second frame are relabeled to match the cluster id from the first frame
-                    new_labels = np.array([
-                        mapper[i] if i != -99 else i
-                        for i in new_labels_unmatched
-                    ])
+                    # objects in clusters with no overlap are assigned to new clusters
+                    new_labels = np.array([mapper[j] for j in self.labels])
 
                     # delete the right overlap
                     labels = labels[0:len(labels) - right_overlap]
@@ -225,9 +228,6 @@ class ST_DBSCAN():
 
                 right_overlap = len(X[np.isin(X[:, 0],
                                               period[-frame_overlap + 1:])])
-
-        # rename labels with -99
-        labels[labels == -99] = -1
 
         self.labels = labels
         return self
