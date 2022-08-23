@@ -16,6 +16,7 @@ from sklearn.cluster import DBSCAN
 from sklearn.utils import check_array
 from scipy.sparse import coo_matrix
 from sklearn.neighbors import NearestNeighbors
+import warnings
 
 
 class ST_DBSCAN():
@@ -108,35 +109,40 @@ class ST_DBSCAN():
             self.labels = db.labels_
 
         else:
-            # compute with sparse matrices
-            # Compute sparse matrix für Euclidean distance
-            nn_spatial = NearestNeighbors(metric=self.metric, radius=self.eps1)
-            nn_spatial.fit(X[:, 1:])
-            euc_sp = nn_spatial.radius_neighbors_graph(X[:, 1:],
-                                                       mode='distance')
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
 
-            # Compute sparse matrix für temporal distance
-            nn_time = NearestNeighbors(metric=self.metric, radius=self.eps2)
-            nn_time.fit(X[:, 0].reshape(n, 1))
-            time_sp = nn_time.radius_neighbors_graph(X[:, 0].reshape(n, 1),
-                                                     mode='distance')
+                # compute with sparse matrices
+                # Compute sparse matrix für Euclidean distance
+                nn_spatial = NearestNeighbors(metric=self.metric,
+                                              radius=self.eps1)
+                nn_spatial.fit(X[:, 1:])
+                euc_sp = nn_spatial.radius_neighbors_graph(X[:, 1:],
+                                                           mode='distance')
 
-            # combine both sparse matrixes and filter by time distance matrix
-            row = time_sp.nonzero()[0]
-            column = time_sp.nonzero()[1]
-            v = np.array(euc_sp[row, column])[0]
+                # Compute sparse matrix für temporal distance
+                nn_time = NearestNeighbors(metric=self.metric,
+                                           radius=self.eps2)
+                nn_time.fit(X[:, 0].reshape(n, 1))
+                time_sp = nn_time.radius_neighbors_graph(X[:, 0].reshape(n, 1),
+                                                         mode='distance')
 
-            # create sparse distance matrix
-            dist_sp = coo_matrix((v, (row, column)), shape=(n, n))
-            dist_sp = dist_sp.tocsc()
-            dist_sp.eliminate_zeros()
+                # combine both sparse matrixes and filter by time distance matrix
+                row = time_sp.nonzero()[0]
+                column = time_sp.nonzero()[1]
+                v = np.array(euc_sp[row, column])[0]
 
-            db = DBSCAN(eps=self.eps1,
-                        min_samples=self.min_samples,
-                        metric='precomputed')
-            db.fit(dist_sp)
+                # create sparse distance matrix
+                dist_sp = coo_matrix((v, (row, column)), shape=(n, n))
+                dist_sp = dist_sp.tocsc()
+                dist_sp.eliminate_zeros()
 
-            self.labels = db.labels_
+                db = DBSCAN(eps=self.eps1,
+                            min_samples=self.min_samples,
+                            metric='precomputed')
+                db.fit(dist_sp)
+
+                self.labels = db.labels_
 
         return self
 
