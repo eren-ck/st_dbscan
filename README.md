@@ -14,9 +14,17 @@ The easiest way to install *st_dbscan* is by using `pip` :
 
 ## How to use
 
+### Import the library
 ```python
 from st_dbscan import ST_DBSCAN
+```
 
+### Usage
+Use by initializing the class and fitting the data.
+
+Data shold be in the order `temporal, spatial_X, spatial_Y` (In other words, your time component must be the first item in the array)
+
+```python
 st_dbscan = ST_DBSCAN(eps1 = 0.05, eps2 = 10, min_samples = 5)
 st_dbscan.fit(data)
 
