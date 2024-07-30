@@ -241,5 +241,5 @@ class ST_DBSCAN():
                 right_overlap = len(X[np.isin(X[:, 0],
                                               period[-frame_overlap + 1:])])
 
-        self.labels = labels
+        self.labels = labels[:len(X)]
         return self
