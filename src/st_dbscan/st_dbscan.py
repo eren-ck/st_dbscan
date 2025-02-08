@@ -181,14 +181,17 @@ class ST_DBSCAN():
                 'frame_size, frame_overlap not correctly configured.')
 
         # unique time points
-        time = np.unique(X[:, 0])
+        time = len(X)#np.unique(X[:, 0]) # ?
 
         labels = None
         right_overlap = 0
         max_label = 0
+        exit = False
 
-        for i in range(0, len(time), (frame_size - frame_overlap + 1)):
-            for period in [time[i:i + frame_size]]:
+        for i in range(0, time, (frame_size - frame_overlap + 1)):
+            if(exit):
+                break
+            for period in [X[i:i + frame_size]]:
                 frame = X[np.isin(X[:, 0], period)]
 
                 self.fit(frame)
@@ -231,9 +234,12 @@ class ST_DBSCAN():
                     labels = labels[0:len(labels) - right_overlap]
                     # change the labels of the new clustering and concat
                     labels = np.concatenate((labels, new_labels))
+                    if(len(labels) == len(X)):
+                        exit = True
+                        break
 
                 right_overlap = len(X[np.isin(X[:, 0],
                                               period[-frame_overlap + 1:])])
 
-        self.labels = labels
+        self.labels = labels[:len(X)]
         return self
