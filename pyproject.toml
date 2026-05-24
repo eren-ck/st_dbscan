@@ -1,0 +1,7 @@
+[build-system]
+requires = [
+    "setuptools>=38.3",
+    "wheel",
+    "pyscaffold>=3.2a0,<3.3a0",
+]
+build-backend = "setuptools.build_meta"
