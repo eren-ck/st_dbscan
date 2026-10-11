@@ -82,6 +82,11 @@ class ST_DBSCAN():
         Returns
         -------
         self
+
+        Notes
+        -----
+        Points with identical timestamps or spatial coordinates are valid
+        neighbors, including when the sparse path is used for large datasets.
         """
         # check if input is correct
         X = check_array(X)
@@ -118,24 +123,25 @@ class ST_DBSCAN():
                                               radius=self.eps1)
                 nn_spatial.fit(X[:, 1:])
                 euc_sp = nn_spatial.radius_neighbors_graph(X[:, 1:],
-                                                           mode='distance')
+                                                           mode='distance').tocoo()
 
                 # Compute sparse matrix für temporal distance
                 nn_time = NearestNeighbors(metric=self.metric,
                                            radius=self.eps2)
                 nn_time.fit(X[:, 0].reshape(n, 1))
                 time_sp = nn_time.radius_neighbors_graph(X[:, 0].reshape(n, 1),
-                                                         mode='distance')
+                                                         mode='connectivity')
 
-                # combine both sparse matrixes and filter by time distance matrix
-                row = time_sp.nonzero()[0]
-                column = time_sp.nonzero()[1]
-                v = np.array(euc_sp[row, column])[0]
+                # Filter stored spatial neighbors by temporal connectivity.
+                # Connectivity includes equal timestamps, and COO retains
+                # explicit zero spatial distances between coincident points.
+                row, column = euc_sp.row, euc_sp.col
+                within_time = np.asarray(time_sp[row, column]).ravel() > 0
 
                 # create sparse distance matrix
-                dist_sp = coo_matrix((v, (row, column)), shape=(n, n))
-                dist_sp = dist_sp.tocsc()
-                dist_sp.eliminate_zeros()
+                dist_sp = coo_matrix((euc_sp.data[within_time],
+                                      (row[within_time], column[within_time])),
+                                     shape=(n, n)).tocsr()
 
                 db = DBSCAN(eps=self.eps1,
                             min_samples=self.min_samples,
