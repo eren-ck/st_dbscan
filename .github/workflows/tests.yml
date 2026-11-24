@@ -1,0 +1,42 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: python -m pip install --upgrade pip ".[test]"
+
+      - name: Test
+        run: python -m pytest
+
+      - name: Build distributions
+        run: python -m build
+
+      - name: Verify wheel version
+        run: |
+          python -c "from importlib.metadata import version; import zipfile, pathlib; wheel = next(pathlib.Path('dist').glob('*.whl')); archive = zipfile.ZipFile(wheel); metadata = archive.read(next(name for name in archive.namelist() if name.endswith('.dist-info/METADATA'))).decode(); wheel_version = next(line.split(': ', 1)[1] for line in metadata.splitlines() if line.startswith('Version: ')); assert wheel_version == version('st-dbscan'); assert not wheel_version.startswith('0.0')"
