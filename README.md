@@ -7,6 +7,26 @@
 - Implemnted using `numpy` and `sklearn`
 - Scales to memory - using chuncking sparse matrices and the `st_dbscan.fit_frame_split`
 
+## Development
+
+Python 3.10 and newer are declared as supported. Build and test from a clean
+checkout with:
+
+```bash
+python -m pip install -e ".[test]"
+python -m pytest
+python -m build
+```
+
+The development version is declared in `pyproject.toml`. Before publishing a
+release, replace the development version (for example, `0.2.4.dev0`) with the
+final release version (`0.2.4`) and verify the wheel metadata:
+
+```bash
+python -m build
+unzip -p dist/*.whl '*/METADATA' | grep '^Version:'
+```
+
 ## Installation
 The easiest way to install *st_dbscan* is by using `pip` :
 

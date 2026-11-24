@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "st-dbscan"
+version = "0.2.4.dev0"
+description = "Spatial-temporal DBSCAN"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE.txt"]
+authors = [
+  { name = "Eren Cakmak", email = "22754816+eren-ck@users.noreply.github.com" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: Unix",
+  "Operating System :: MacOS",
+]
+dependencies = [
+  "numpy",
+  "scipy",
+  "scikit-learn",
+]
+
+[project.urls]
+Homepage = "https://github.com/eren-ck/st_dbscan"
+Repository = "https://github.com/eren-ck/st_dbscan"
+
+[project.optional-dependencies]
+test = [
+  "build",
+  "pytest",
+  "pytest-cov",
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=st_dbscan --cov-report=term-missing --verbose"
+testpaths = ["tests"]

@@ -1,13 +1,10 @@
-# -*- coding: utf-8 -*-
-from pkg_resources import get_distribution, DistributionNotFound
+from importlib.metadata import PackageNotFoundError, version
 
 try:
-    # Change here if project is renamed and does not equal the package name
-    dist_name = __name__
-    __version__ = get_distribution(dist_name).version
-except DistributionNotFound:
-    __version__ = 'unknown'
-finally:
-    del get_distribution, DistributionNotFound
+    __version__ = version("st-dbscan")
+except PackageNotFoundError:
+    __version__ = "unknown"
 
-from .st_dbscan import ST_DBSCAN  # noqa: E402
+from .st_dbscan import ST_DBSCAN
+
+__all__ = ["ST_DBSCAN", "__version__"]
